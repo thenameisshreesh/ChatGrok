@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Chatbot</title>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #b2ebe3, #e2e6ea); /* deeper green-to-light grey */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+
+
+.chat-container {
+    width: 100%;
+    max-width: 450px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 80vh;
+    transition: all 0.3s ease;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #10a37f, #0d7a60);
+    color: white;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #fafafa;
+    scrollbar-width: thin;
+    scrollbar-color: #10a37f #f0f2f5;
+}
+
+.chat-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+    background-color: #10a37f;
+    border-radius: 4px;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.bubble {
+    padding: 12px 14px;
+    border-radius: 14px;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.user .bubble {
+    background: #dcf8c6;
+    color: black;
+    border-bottom-right-radius: 4px;
+}
+
+.bot .bubble {
+    background: #f1f0f0;
+    color: black;
+    border-bottom-left-radius: 4px;
+}
+
+pre {
+    background: #1e1e1e;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13px;
+}
+
+code {
+    font-family: Consolas, monospace;
+}
+
+.loading-dots {
+    display: inline-block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #10a37f;
+    letter-spacing: 4px;
+    animation: blink 1.4s infinite both;
+}
+
+@keyframes blink {
+    0% {opacity: .2;}
+    20% {opacity: 1;}
+    100% {opacity: .2;}
+}
+
+/* Responsive for Tablets & Mobiles */
+@media screen and (max-width: 768px) {
+    .chat-container {
+        height: 100vh;
+        border-radius: 0;
+        max-width: 100%;
+    }
+    .chat-header {
+        font-size: 16px;
+        padding: 12px;
+    }
+    .bubble {
+        font-size: 13px;
+        max-width: 85%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .chat-header {
+        font-size: 15px;
+        padding: 10px;
+    }
+    .avatar {
+        width: 32px;
+        height: 32px;
+    }
+    .bubble {
+        padding: 10px 12px;
+        font-size: 12px;
+        max-width: 88%;
+    }
+    pre {
+        font-size: 12px;
+    }
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">AI Chatbot</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input" style="display: flex; border-top: 1px solid #ddd;">
+            <input type="text" id="user-input" placeholder="Type your message..." style="flex: 1; padding: 10px; border: none; outline: none;">
+            <button onclick="sendMessage()" style="padding: 10px 20px; background: #10a37f; color: white; border: none; cursor: pointer;">Send</button>
+        </div>
+    </div>
+
+<script>
+    function addMessage(sender, text, isCode=false, lang="") {
+        let chatBox = document.getElementById("chat-box");
+        let msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", sender);
+
+        let avatar = document.createElement("img");
+        avatar.classList.add("avatar");
+        avatar.src = sender === "user" ? "/static/user.png" : "/static/chat.png";
+
+        let bubble = document.createElement("div");
+        bubble.classList.add("bubble");
+
+        if (isCode) {
+            bubble.innerHTML = `<pre><code class="language-${lang}">${text}</code></pre>`;
+            setTimeout(() => { hljs.highlightAll(); }, 10);
+        } else {
+            bubble.innerHTML = text;
+        }
+
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(bubble);
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addLoading() {
+        let chatBox = document.getElementById("chat-box");
+        let msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", "bot");
+        msgDiv.id = "loading-msg";
+
+        let avatar = document.createElement("img");
+        avatar.classList.add("avatar");
+        avatar.src = "/static/chat.png";
+
+        let bubble = document.createElement("div");
+        bubble.classList.add("bubble");
+        bubble.innerHTML = `<span class="loading-dots">...</span>`;
+
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(bubble);
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeLoading() {
+        let loadingMsg = document.getElementById("loading-msg");
+        if (loadingMsg) loadingMsg.remove();
+    }
+
+    async function sendMessage() {
+        let userInput = document.getElementById("user-input");
+        let message = userInput.value.trim();
+        if (!message) return;
+
+        addMessage("user", message);
+        userInput.value = "";
+
+        addLoading();
+
+        let response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
+
+        let data = await response.json();
+        removeLoading();
+
+        let reply = data.reply;
+
+        // Detect triple backticks
+        let codeMatch = reply.match(/```(\w+)\n([\s\S]*?)```/);
+        if (codeMatch) {
+            let lang = codeMatch[1];
+            let codeText = codeMatch[2];
+            addMessage("bot", codeText, true, lang);
+        } 
+        else if (/class |#include |public static void|def |function /.test(reply)) {
+            let lang = "plaintext";
+            if (/class |public static void/.test(reply)) lang = "java";
+            else if (/#include/.test(reply)) lang = "cpp";
+            else if (/def /.test(reply)) lang = "python";
+            else if (/function /.test(reply)) lang = "javascript";
+            addMessage("bot", reply, true, lang);
+        } 
+        else {
+            addMessage("bot", reply);
+        }
+    }
+</script>
+</body>
+</html>
